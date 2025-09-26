@@ -1,0 +1,14 @@
+{
+  "path": {
+    "exe": "bin\\flask_demo.exe",
+    "exe_path": ""
+  },
+  "compile": {
+    "exe": "scons",
+    "option": "",
+    "g": "Visual Studio 16 2019"
+  },
+  "main": {
+    "cmd": "set PATH=%PATH%;{path_qmake};{path_cmake};{path_exe_path}\r\n{driver}\r\ncd {path_project}\r\nscons --clean \r\nscons"
+  }
+}

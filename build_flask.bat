@@ -1,0 +1,6 @@
+@echo off
+chcp 65001 >nul
+echo Setting up UTF-8 encoding...
+echo Building Flask demo...
+scons bin/flask_demo.exe
+echo Flask demo build completed.

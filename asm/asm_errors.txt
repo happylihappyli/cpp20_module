@@ -1,0 +1,3 @@
+Microsoft (R) Macro Assembler (x64) Version 14.39.33522.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+

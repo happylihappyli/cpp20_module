@@ -1,0 +1,6 @@
+@echo off
+chcp 65001 >nul
+echo Setting up UTF-8 encoding...
+echo Building C++20 modules project...
+scons
+echo Build completed.

@@ -1,0 +1,9 @@
+
+# radare2 基本使用
+r2 hello2.exe          # 打开文件
+> aaa                  # 自动分析
+> pdf                  # 打印当前函数反汇编
+> aflj                 # 列出所有函数(JSON格式)
+> px 100               # 十六进制查看
+> s main               # 跳转到main函数
+> V                    # 进入可视化模式

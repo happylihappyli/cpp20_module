@@ -1,0 +1,186 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+import subprocess
+from SCons.Environment import Environment
+
+# Create environment
+env = Environment()
+
+# VS2022 paths
+VS_PATH = r'D:\Code\VS2022\Community'
+VC_VARS = os.path.join(VS_PATH, 'VC\Auxiliary\Build\vcvars64.bat')
+
+# Project paths
+SRC_DIR = 'src'
+OBJ_DIR = 'obj'
+ASM_DIR = 'asm'
+BIN_DIR = 'bin'
+
+# Ensure directories exist
+for d in [OBJ_DIR, ASM_DIR, BIN_DIR]:
+    if not os.path.exists(d):
+        os.makedirs(d)
+
+def setup_vs_env():
+    """Setup Visual Studio environment variables"""
+    cmd = f'call "{VC_VARS}" && set'
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    if result.returncode == 0:
+        for line in result.stdout.split('\n'):
+            if '=' in line:
+                key, value = line.split('=', 1)
+                os.environ[key] = value
+
+def compile_modules():
+    """Compile C++20 modules"""
+    print("Compiling C++20 modules...")
+    
+    # Module compilation order
+    modules = [
+        ('funny.ixx', 'funny.ifc', 'funny.obj'),
+        ('math.ixx', 'math.ifc', 'math.obj')
+    ]
+    
+    for ixx_file, ifc_file, obj_file in modules:
+        ixx_path = os.path.join(SRC_DIR, ixx_file)
+        ifc_path = os.path.join(OBJ_DIR, ifc_file)
+        obj_path = os.path.join(OBJ_DIR, obj_file)
+        
+        cmd = f'cl /std:c++20 /experimental:module /c "{ixx_path}" /Fo:"{obj_path}" /module:output "{ifc_path}"'
+        result = subprocess.run(cmd, shell=True)
+        if result.returncode != 0:
+            print(f"Failed to compile {ixx_file}")
+            return False
+    
+    return True
+
+def compile_main():
+    """Compile main.cpp"""
+    print("Compiling main.cpp...")
+    
+    main_cpp = os.path.join(SRC_DIR, 'main.cpp')
+    main_obj = os.path.join(OBJ_DIR, 'main.obj')
+    funny_ifc = os.path.join(OBJ_DIR, 'funny.ifc')
+    math_ifc = os.path.join(OBJ_DIR, 'math.ifc')
+    
+    cmd = f'cl /std:c++20 /experimental:module /c "{main_cpp}" /Fo:"{main_obj}" /module:reference "{funny_ifc}" /module:reference "{math_ifc}"'
+    result = subprocess.run(cmd, shell=True)
+    return result.returncode == 0
+
+def generate_assembly():
+    """Generate assembly from source and objects"""
+    print("Generating assembly files...")
+    
+    # Generate source-level assembly
+    main_cpp = os.path.join(SRC_DIR, 'main.cpp')
+    main_asm = os.path.join(ASM_DIR, 'main_source.asm')
+    funny_ifc = os.path.join(OBJ_DIR, 'funny.ifc')
+    math_ifc = os.path.join(OBJ_DIR, 'math.ifc')
+    
+    cmd = f'cl /std:c++20 /experimental:module /FA /Fa"{main_asm}" "{main_cpp}" /module:reference "{funny_ifc}" /module:reference "{math_ifc}" /EHsc'
+    subprocess.run(cmd, shell=True)
+    
+    # Generate object disassembly
+    objects = ['main.obj', 'funny.obj', 'math.obj']
+    for obj in objects:
+        obj_path = os.path.join(OBJ_DIR, obj)
+        asm_path = os.path.join(ASM_DIR, f'{obj.replace(".obj", "_obj_disasm.asm")}')
+        if os.path.exists(obj_path):
+            cmd = f'dumpbin /disasm "{obj_path}" > "{asm_path}"'
+            subprocess.run(cmd, shell=True)
+    
+    print("Assembly files generated in asm/ directory")
+
+def link_executable():
+    """Link final executable"""
+    print("Linking executable...")
+    
+    obj_files = [
+        os.path.join(OBJ_DIR, 'main.obj'),
+        os.path.join(OBJ_DIR, 'funny.obj'),
+        os.path.join(OBJ_DIR, 'math.obj')
+    ]
+    
+    exe_path = os.path.join(BIN_DIR, 'main.exe')
+    
+    cmd = f'link {"".join([f"\"{obj}\" " for obj in obj_files])}/OUT:"{exe_path}" /SUBSYSTEM:CONSOLE'
+    result = subprocess.run(cmd, shell=True)
+    return result.returncode == 0
+
+def create_assembly_exe():
+    """Create executable from assembly (demonstration)"""
+    print("Creating assembly compilation script...")
+    
+    # Create a script to compile from assembly
+    script_content = '''@echo off
+chcp 65001 >nul
+call "D:\\Code\\VS2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat"
+
+echo Note: main.asm from dumpbin cannot be directly compiled
+echo This script demonstrates the assembly workflow:
+echo.
+
+echo 1. Relink from object files:
+link ..\\obj\\main.obj ..\\obj\\funny.obj ..\\obj\\math.obj /OUT:main_from_objects.exe /SUBSYSTEM:CONSOLE
+
+if exist main_from_objects.exe (
+    echo Success: Created main_from_objects.exe
+    echo Testing executable:
+    main_from_objects.exe
+) else (
+    echo Failed to create executable from objects
+)
+
+echo.
+echo Assembly files are available for analysis but not direct compilation
+echo Use object file relinking for practical assembly-to-exe workflow
+'''
+    
+    script_path = os.path.join(ASM_DIR, 'compile_asm_to_exe.bat')
+    with open(script_path, 'w', encoding='utf-8') as f:
+        f.write(script_content)
+    
+    print(f"Assembly compilation script created: {script_path}")
+
+# Main build targets
+def build_all():
+    """Build complete project with assembly generation"""
+    print("Starting complete build with assembly generation...")
+    
+    # Setup environment
+    setup_vs_env()
+    
+    # Build steps
+    if not compile_modules():
+        return False
+    
+    if not compile_main():
+        return False
+    
+    generate_assembly()
+    
+    if not link_executable():
+        return False
+    
+    create_assembly_exe()
+    
+    print("\nBuild completed successfully!")
+    print("Generated files:")
+    print(f"  - Executable: {os.path.join(BIN_DIR, 'main.exe')}")
+    print(f"  - Assembly files: {ASM_DIR}/")
+    print(f"  - Assembly script: {os.path.join(ASM_DIR, 'compile_asm_to_exe.bat')}")
+    
+    return True
+
+# SCons targets
+env.Command('build_with_asm', [], lambda target, source, env: build_all())
+env.Alias('asm', 'build_with_asm')
+env.Alias('assembly', 'build_with_asm')
+
+# Default target
+Default('build_with_asm')
+
+if __name__ == '__main__':
+    build_all()
