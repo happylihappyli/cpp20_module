@@ -1,30 +1,36 @@
-﻿import funny;// Import C++ standard library wrapper module
-import math;// Import our math module
+import funny;//  导入 C++ 标准库做了包装
+import math;// 导入数学计算
 using namespace funny;
+    int i=0;
+    int sum=0;
+// 函数声明 
+void fun_71();
+void fun_73();
+void fun_68();
 
-// 函数声明
-void fun_55();
-void fun_67();
+void fun_71(){
+    if (i<100){
+        fun_73();
+    }else{
+        fun_68();
+    }
+}
+
+
+void fun_73(){
+    i++;
+    sum+=i;
+    fun_71();
+}
+
+
+void fun_68(){
+    print(R"(1+...+100=)"); // 68
+    print("sum="+str(sum));
+}
+
 
 int main(int argc, char* argv[]){
-
-    if (1==1){
-        fun_67();
-    }else{
-        fun_55();
-    }
-
-    return 0;
+    fun_71();
 }
-
-void fun_55(){
-    print(R"(打印之前内容)");
-
-}
-
-void fun_67(){
-    print(R"(fff错误)");
-
-}
-
 

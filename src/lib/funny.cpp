@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 #include <cstdio>
+#include <string>
+#include <locale>
 #ifdef _WIN32
 #include <windows.h>
 #include <io.h>
@@ -19,6 +21,7 @@ namespace funny {
             SetConsoleOutputCP(CP_UTF8);
             console_initialized = true;
         }
+        // 使用printf输出UTF-8字符串
         printf("%s\n", str.c_str());
 #else
         std::cout << str << std::endl;

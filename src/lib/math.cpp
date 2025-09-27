@@ -1,8 +1,8 @@
 // math.cpp - Math module implementation file
+module math;
+
 #include <stdexcept>
 #include <cmath>
-
-module math;
 
 namespace math {
     // Basic math operations implementation

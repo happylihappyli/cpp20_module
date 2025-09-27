@@ -1,10 +1,10 @@
-﻿// main.cpp - Main program file
+// main.cpp - Main program file
 import funny;// Import C++ standard library wrapper module
 import math;// Import our math module
 using namespace funny;
 
 int main() {
-    print(R"( === C++20 Test v1.1 ==== )");
+    print(R"( === C++20 测试 v1.1 ==== )");
     
     try {
         print(R"(Basic math operation test:)");
