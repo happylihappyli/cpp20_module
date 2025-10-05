@@ -1,0 +1,48 @@
+# SConstruct文件用于编译dll_dependency_analyzer.cpp
+# 这个程序用于详细分析PyTorch DLL的加载问题
+
+import os
+import sys
+
+# 设置构建环境
+env = Environment()
+
+# 设置为Windows平台
+if env['PLATFORM'] == 'win32':
+    # 设置VS编译器
+    env.Tool('msvc')
+    
+    # 设置C++标准为C++17
+    env.Append(CPPFLAGS=['/std:c++17', '/EHsc', '/utf-8', '/D_CRT_SECURE_NO_WARNINGS'])
+    
+    # 仅链接Windows系统库
+    env.Append(LIBS=['kernel32', 'user32', 'gdi32', 'winspool', 'comdlg32', 'advapi32', 'shell32', 'ole32', 'oleaut32', 'uuid', 'odbc32', 'odbccp32'])
+else:
+    # 非Windows平台，仅链接基本系统库
+    env.Append(LIBS=['c', 'stdc++'])
+
+# 创建输出目录
+output_dir = '../../bin'
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+# 设置输出路径
+env.Replace(BINDIR=output_dir)
+
+# 创建可执行文件
+dll_analyzer_exe = env.Program(
+    target=os.path.join(env['BINDIR'], 'dll_dependency_analyzer.exe'),
+    source='dll_dependency_analyzer.cpp'
+)
+
+# 设置默认目标
+Default(dll_analyzer_exe)
+
+# 打印编译信息
+print("\nSCons构建配置:")
+print(f"  平台: {env['PLATFORM']}")
+print(f"  编译器: $CC")
+print(f"  C++标准: C++17")
+print(f"  输出目录: {output_dir}")
+print(f"  目标: dll_dependency_analyzer.exe")
+print("  目的: 分析PyTorch DLL的加载问题并提供详细诊断信息")

@@ -1,0 +1,108 @@
+# 独立的SConstruct文件，用于编译torchscript目录下的load_torchscript.cpp
+# 此文件与外层的SConstruct文件无关，可独立运行
+
+import os
+import sys
+
+# 设置构建环境
+env = Environment()
+
+# 设置为Windows平台
+if env['PLATFORM'] == 'win32':
+    # 设置VS编译器
+    env.Tool('msvc')
+    
+    # 设置C++标准为C++17（PyTorch推荐版本）
+    env.Append(CPPFLAGS=['/std:c++17', '/EHsc', '/utf-8', '/D_CRT_SECURE_NO_WARNINGS'])
+    
+    # 优化选项
+    # env.Append(CPPFLAGS=['/O2'])
+
+# 设置PyTorch路径 - 用户可以根据实际情况修改
+# 从环境变量获取或使用默认路径
+PYTORCH_PATH = os.environ.get('PYTORCH_PATH', r'D:/Code\\libtorch-win-shared-with-deps-2.8.0+cu126\\libtorch')
+
+# 打印PyTorch路径信息
+print(f"使用PyTorch路径: {PYTORCH_PATH}")
+
+# 检查PyTorch路径是否存在
+if not os.path.exists(PYTORCH_PATH):
+    print(f"错误: PyTorch路径 '{PYTORCH_PATH}' 不存在！")
+    print("请设置正确的PYTORCH_PATH环境变量，或直接修改本文件中的PYTORCH_PATH变量")
+    Exit(1)
+
+# 检查PyTorch头文件是否存在
+# 注意：在某些LibTorch版本中，torch.h可能位于不同的路径
+torch_header_paths = [
+    os.path.join(PYTORCH_PATH, 'include', 'torch', 'torch.h'),
+    os.path.join(PYTORCH_PATH, 'include', 'torch', 'csrc', 'api', 'include', 'torch', 'torch.h')
+]
+
+found_header = False
+for header_path in torch_header_paths:
+    if os.path.exists(header_path):
+        torch_header = header_path
+        found_header = True
+        break
+
+if not found_header:
+    print(f"错误: 在路径 {PYTORCH_PATH} 中找不到PyTorch头文件")
+    print("请确保以下任一路径存在:")
+    for path in torch_header_paths:
+        print(f"  - {path}")
+    print("解决方法:")
+    print("1. 从PyTorch官网下载与您的PyTorch版本匹配的LibTorch库")
+    print("2. 解压到本地目录")
+    print("3. 设置PYTORCH_PATH环境变量指向该目录或修改本文件")
+    Exit(1)
+
+# 设置PyTorch的包含路径
+env.Append(CPPPATH=[
+    os.path.join(PYTORCH_PATH, 'include'),
+    os.path.join(PYTORCH_PATH, 'include', 'torch', 'csrc', 'api', 'include')
+])
+
+# 设置PyTorch的库路径
+env.Append(LIBPATH=[
+    os.path.join(PYTORCH_PATH, 'lib')
+])
+
+# 设置需要链接的库
+# 注意：根据您下载的LibTorch版本（Debug/Release），库名可能会有所不同
+# Debug版本的PyTorch库设置
+env.Append(LIBS=['torch', 'torch_cpu', 'c10', 'caffe2_nvrtc', 'fbgemm', 'kineto', 'cpuinfo', 'dnnl', 'XNNPACK', 'pthreadpool', 'torch_cuda', 'c10_cuda'])
+
+# 对于Release版本，可能需要使用以下库名
+# env.Append(LIBS=['torch', 'torch_cpu', 'c10'])
+
+# 创建输出目录
+output_dir = '../../bin'
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+# 设置输出路径
+env.Replace(BINDIR=output_dir)
+
+torchscript_exe = env.Program(
+    target=os.path.join(env['BINDIR'], 'load_torchscript.exe'),
+    source='load_torchscript.cpp'
+)
+
+# 设置默认目标
+default_targets = [torchscript_exe]
+Default(default_targets)
+
+# 打印编译信息
+print("\nSCons构建配置:")
+print(f"  平台: {env['PLATFORM']}")
+print(f"  编译器: {env.get('CXX', 'default')}")
+print(f"  C++标准: C++17")
+print(f"  PyTorch路径: {PYTORCH_PATH}")
+print(f"  输出目录: {output_dir}")
+# 获取目标文件名（处理File对象）
+target_name = str(torchscript_exe[0])
+print(f"  目标: {os.path.basename(target_name)}")
+print("\n使用方法:")
+print("  编译: scons")
+print("  运行: ../../bin/load_torchscript.exe")
+print("\n注意: 请确保已使用generate_torchscript.py生成TorchScript模型文件")

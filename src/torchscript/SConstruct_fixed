@@ -1,0 +1,91 @@
+# SConstruct文件 - 用于编译修复版本的TorchScript模型加载程序
+# 解决PyTorch版本不匹配和DLL缺失问题
+
+# 导入必要的模块
+import os
+import sys
+import platform
+
+# 设置项目根目录
+# 在SCons中，使用Dir('.').abspath获取当前目录
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(Dir('.').abspath), '..', '..'))
+
+# 设置输出目录
+BIN_DIR = os.path.join(ROOT_DIR, 'bin')
+LIB_DIR = os.path.join(ROOT_DIR, 'lib')
+
+# 确保输出目录存在
+for dir_path in [BIN_DIR, LIB_DIR]:
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
+# 配置编译器选项
+env = Environment()
+
+# 设置C++标准为C++17或更高（PyTorch推荐）
+env.Append(CXXFLAGS=['/std:c++17', '/EHsc'])
+
+# 为Windows平台添加特定选项
+env.Append(LINKFLAGS=['/DEBUG'])
+
+# 设置PyTorch/LibTorch路径
+# 用户需要根据实际安装路径修改这里
+LIBTORCH_PATH = 'D:/Code\\libtorch-win-shared-with-deps-2.8.0+cu126\\libtorch'
+
+# 检查LibTorch路径是否存在
+if not os.path.exists(LIBTORCH_PATH):
+    print(f"警告: 找不到LibTorch库目录: {LIBTORCH_PATH}")
+    print("请修改SConstruct_fixed文件中的LIBTORCH_PATH变量")
+    Exit(1)
+
+# 设置PyTorch头文件和库文件路径
+env.Append(CPPPATH=[
+    os.path.join(LIBTORCH_PATH, 'include'),
+    os.path.join(LIBTORCH_PATH, 'include', 'torch', 'csrc', 'api', 'include')
+])
+
+env.Append(LIBPATH=[os.path.join(LIBTORCH_PATH, 'lib')])
+
+# 添加必要的PyTorch库
+env.Append(LIBS=[
+    'torch',
+    'torch_cpu',
+    'c10',
+    'kernel32',
+    'user32',
+    'gdi32',
+    'winspool',
+    'comdlg32',
+    'advapi32',
+    'shell32',
+    'ole32',
+    'oleaut32',
+    'uuid',
+    'odbc32',
+    'odbccp32'
+])
+
+# 定义构建目标
+env.Program(
+    target=os.path.join(BIN_DIR, 'load_torchscript_fixed.exe'),
+    source=['load_torchscript_fixed.cpp']
+)
+
+# 添加构建信息输出
+print("""======================================================
+            TorchScript模型加载程序 - 修复版本
+======================================================
+构建配置信息:
+- 输出目录: {}
+- LibTorch路径: {}
+- C++标准: C++17
+
+编译完成后，请执行以下步骤:
+1. 运行copy_torch_dlls.bat脚本复制所有必要的DLL文件
+2. 使用create_libtorch_2_3_0_compatible_model.py脚本生成兼容的模型
+3. 运行load_torchscript_fixed.exe程序测试模型加载
+4. 参考TORCHSCRIPT_MODEL_LOADING_SOLUTION.md获取完整解决方案
+
+如果遇到编译错误，请检查LibTorch路径是否正确，并确保所有依赖已正确安装。
+======================================================"""
+.format(BIN_DIR, LIBTORCH_PATH))

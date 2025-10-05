@@ -1,0 +1,35 @@
+# 用于编译path_test.cpp的SConstruct文件
+
+import os
+import sys
+
+# 设置构建环境
+env = Environment()
+
+# 设置为Windows平台
+if env['PLATFORM'] == 'win32':
+    # 设置VS编译器
+    env.Tool('msvc')
+    
+    # 设置C++标准为C++17
+    env.Append(CPPFLAGS=['/std:c++17', '/EHsc', '/utf-8', '/D_CRT_SECURE_NO_WARNINGS'])
+
+# 创建输出目录
+output_dir = '../bin'
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+# 编译path_test.cpp - 这是一个简单的路径测试程序，不需要PyTorch
+path_test_exe = env.Program(
+    target=os.path.join(output_dir, 'path_test.exe'),
+    source='path_test.cpp'
+)
+
+# 设置默认目标
+Default(path_test_exe)
+
+# 打印编译信息
+print("\nSCons构建配置:")
+print(f"  平台: {env['PLATFORM']}")
+print(f"  输出目录: {output_dir}")
+print(f"  目标: path_test.exe")

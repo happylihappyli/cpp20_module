@@ -1,0 +1,64 @@
+# 简化版SConstruct构建文件
+# 用于编译load_torchscript_simple.cpp
+
+import os
+import platform
+
+# 设置项目根目录
+ROOT_DIR = os.path.dirname(Dir('.').abspath)
+BIN_DIR = os.path.join(ROOT_DIR, '..', '..', 'bin')
+
+# 配置环境
+# 明确指定VS2022编译器路径
+env = Environment(
+    ENV=os.environ,
+    CC='D:\\Code\\VS2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\bin\\Hostx64\\x64\\cl.exe',
+    CXX='D:\\Code\\VS2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\bin\\Hostx64\\x64\\cl.exe',
+    LINK='D:\\Code\\VS2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\bin\\Hostx64\\x64\\link.exe',
+    CPPPATH=[],
+    LIBPATH=[],
+    LIBS=[],
+    CXXFLAGS=['/EHsc', '/std:c++17', '/W3', '/D_CRT_SECURE_NO_WARNINGS'],
+    LINKFLAGS=[]
+)
+
+# 打印构建信息
+print("\n=== TorchScript简化版程序构建配置 ===")
+print("根目录: {}".format(ROOT_DIR))
+print("输出目录: {}".format(BIN_DIR))
+print("编译器: {}".format(env['CXX']))
+
+# 设置PyTorch/LibTorch路径
+if platform.system() == 'Windows':
+    # 使用的LibTorch 2.8.0版本路径
+    libtorch_path = 'D:/Code\\libtorch-win-shared-with-deps-2.8.0+cu126\\libtorch'
+    
+    print("LibTorch路径: {}".format(libtorch_path))
+    
+    # 添加LibTorch头文件和库文件路径
+    env.Append(
+        CPPPATH=[
+            os.path.join(libtorch_path, 'include'),
+            os.path.join(libtorch_path, 'include', 'torch', 'csrc', 'api', 'include')
+        ],
+        LIBPATH=[
+            os.path.join(libtorch_path, 'lib'),
+            'D:\\Code\\VS2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\lib\\x64'
+        ],
+        LIBS=['torch.lib', 'torch_cpu.lib', 'c10.lib', 'kernel32.lib', 'user32.lib', 'gdi32.lib', 'winspool.lib', 'comdlg32.lib', 'advapi32.lib', 'shell32.lib', 'ole32.lib', 'oleaut32.lib', 'uuid.lib', 'odbc32.lib', 'odbccp32.lib']
+    )
+
+# 确保输出目录存在
+if not os.path.exists(BIN_DIR):
+    os.makedirs(BIN_DIR, exist_ok=True)
+
+# 创建构建目标
+target = env.Program(
+    target=os.path.join(BIN_DIR, 'load_torchscript_simple'),
+    source='load_torchscript_simple.cpp'
+)
+
+# 构建信息输出
+print("\n构建目标已设置完成。")
+print("编译命令将生成: {}".format(target[0]))
+print("\n=== 构建配置完成 ===")

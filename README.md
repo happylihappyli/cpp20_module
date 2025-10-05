@@ -1,6 +1,6 @@
 # C++20 模块项目
 
-这是一个使用 C++20 模块特性的示例项目，展示了现代 C++ 的模块化编程方法，包含一个功能完整的 NumPy 风格数值计算库。
+这是一个使用 C++20 模块特性的示例项目，展示了现代 C++ 的模块化编程方法，包含一个功能完整的 NumPy 风格数值计算库以及与 PyTorch 集成的 TorchScript 模型加载、运行功能。
 
 ## 项目结构
 
@@ -18,7 +18,14 @@ cpp20_module/
 │   ├── numpy.cpp          # NumPy风格库模块实现
 │   ├── numpy.h            # NumPy风格库传统头文件（IDE兼容性）
 │   ├── numpy_demo.cpp     # NumPy库功能演示程序
-│   └── numpy_test.cpp     # NumPy库测试程序
+│   ├── numpy_test.cpp     # NumPy库测试程序
+│   └── torchscript/       # TorchScript模型集成相关代码
+│       ├── generate_simple_model.py  # 生成简单PyTorch模型
+│       ├── load_torchscript.cpp      # 加载TorchScript模型的C++程序
+│       ├── SConstruct                # TorchScript项目的构建文件
+│       └── README.md                 # TorchScript使用说明
+├── bin/                   # 编译输出目录
+│   └── models/            # TorchScript模型存储目录
 ├── cpp20_module.sln       # Visual Studio 解决方案文件
 ├── cpp20_module.vcxproj   # Visual Studio 项目文件
 ├── cpp20_module.vcxproj.filters # 项目过滤器文件
@@ -88,6 +95,13 @@ cl /std:c++20 /EHsc src/numpy_test.cpp src/numpy.cpp src/funny.cpp
 - **异常安全**: 完整的边界检查和错误处理
 - **性能优化**: 连续内存布局，高效的数组操作
 
+### TorchScript 集成
+- **模型生成**: 提供简单的Python脚本用于创建和导出PyTorch模型
+- **模型加载**: C++接口用于加载TorchScript模型
+- **模型运行**: 在C++中执行模型推理
+- **版本兼容性**: 支持PyTorch 2.8.0版本
+- **命令行参数**: 支持通过命令行参数指定模型路径和类型
+
 ### 兼容性说明
 - 项目同时提供传统头文件（`.h`）以确保 IDE 兼容性
 - 支持 IntelliSense 和代码导航功能
@@ -99,6 +113,9 @@ cl /std:c++20 /EHsc src/numpy_test.cpp src/numpy.cpp src/funny.cpp
 - Windows 10/11
 - C++20 标准支持
 - MSVC 编译器 v143 或更新版本
+- Python 3.8 或更新版本 (用于TorchScript模型生成)
+- PyTorch 2.8.0 (用于模型生成)
+- LibTorch 2.8.0 (PyTorch的C++库)
 
 ## NumPy 库使用示例
 
@@ -135,9 +152,131 @@ int main() {
 }
 ```
 
+## TorchScript 模型生成与使用指南
+
+### 1. 生成TorchScript模型
+
+项目提供了Python脚本用于创建与LibTorch 2.8.0兼容的PyTorch模型：
+
+```bash
+cd src\torchscript
+python generate_simple_model.py
+```
+
+此脚本将生成以下三个模型文件到`bin/models`目录：
+- `ultra_simple_add_model_v2.8.0.pt` - 最简单的加法模型，接收一个包含两个元素的输入
+- `two_input_add_model_v2.8.0.pt` - 接收两个单独输入的加法模型
+- `complex_model_v2.8.0.pt` - 包含两层线性层和ReLU激活函数的稍微复杂模型
+
+生成过程会输出模型结构、示例输入输出及使用提示。
+
+### 2. 编译C++程序
+
+使用SCons构建系统编译加载TorchScript模型的C++程序：
+
+```bash
+cd src\torchscript
+scons
+```
+
+编译成功后，可执行文件`load_torchscript.exe`将生成在`../../bin`目录下。
+
+### 3. 运行和测试模型
+
+编译成功后，可以使用以下命令运行和测试不同的模型：
+
+#### 使用预设模型
+
+```bash
+# 使用超简单加法模型
+..\..\bin\load_torchscript.exe --ultra-simple
+
+# 使用双输入加法模型
+..\..\bin\load_torchscript.exe --two-input
+
+# 使用复杂模型
+..\..\bin\load_torchscript.exe --complex
+```
+
+#### 指定自定义模型路径
+
+```bash
+..\..\bin\load_torchscript.exe --model path\to\your\model.pt
+```
+
+#### 查看帮助信息
+
+```bash
+..\..\bin\load_torchscript.exe -h
+```
+
+#### 列出可用模型
+
+```bash
+..\..\bin\load_torchscript.exe --list-models
+```
+
+### 4. 模型功能说明
+
+#### ultra_simple_add_model_v2.8.0.pt
+- **描述**: 最简单的加法模型
+- **输入**: 一维FloatTensor，包含两个元素，形状为(2,)
+- **输出**: 单个浮点数，为输入两个元素的和
+- **示例**: 输入[2.0, 3.0]，输出5.0
+
+#### two_input_add_model_v2.8.0.pt
+- **描述**: 接收两个单独输入的加法模型
+- **输入**: 两个一维FloatTensor，每个包含一个元素
+- **输出**: 单个浮点数，为两个输入的和
+- **示例**: 输入[2.0]和[3.0]，输出5.0
+
+#### complex_model_v2.8.0.pt
+- **描述**: 包含两层线性层和ReLU激活函数的模型
+- **输入**: 一维FloatTensor，包含两个元素，形状为(2,)
+- **输出**: 单个浮点数
+- **示例**: 输入[2.0, 3.0]，输出经过网络计算的结果
+
+### 5. 常见问题排查
+
+- **版本不兼容**: 确保使用的PyTorch和LibTorch版本均为2.8.0
+- **DLL缺失**: 确保所有必要的DLL文件（torch.dll、torch_cpu.dll、c10.dll等）已正确复制到运行目录
+- **模型文件不存在**: 检查指定的模型路径是否正确
+- **输入格式错误**: 确保提供的输入张量与模型要求的格式匹配
+
+### 6. C++代码使用示例
+
+```cpp
+// 加载模型
+auto module = torch::jit::load(model_path);
+
+// 设置为评估模式
+module.eval();
+
+// 创建输入
+std::vector<torch::jit::IValue> inputs;
+inputs.push_back(torch::tensor({2.0, 3.0}));
+
+// 执行模型
+at::Tensor output = module.forward(inputs).toTensor();
+
+// 输出结果
+std::cout << "输出: " << output.item<float>() << std::endl;
+```
+
 ## 类型别名
 
 - `ArrayF`: NDArray<float>
 - `ArrayD`: NDArray<double>
 - `ArrayI`: NDArray<int>
 - `ArrayL`: NDArray<long long>
+
+## 总结
+
+本项目展示了现代C++20的模块化编程方法，并提供了完整的数值计算库功能，以及与PyTorch的无缝集成。通过本项目，您可以：
+
+1. 学习如何使用C++20的模块系统进行现代C++编程
+2. 使用NumPy风格的数值计算库进行科学计算
+3. 在C++中集成和运行PyTorch模型
+4. 了解从模型生成、编译到运行的完整工作流程
+
+无论是用于学习现代C++特性，还是作为实际项目的基础框架，本项目都提供了有价值的参考和示例代码。

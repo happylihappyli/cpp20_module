@@ -1,0 +1,39 @@
+# 用于编译dynamic_pytorch_test.cpp的SConstruct文件
+
+import os
+import sys
+
+# 设置构建环境
+env = Environment()
+
+# 设置为Windows平台
+if env['PLATFORM'] == 'win32':
+    # 设置VS编译器
+    env.Tool('msvc')
+    
+    # 设置C++标准为C++17
+    env.Append(CPPFLAGS=['/std:c++17', '/EHsc', '/utf-8', '/D_CRT_SECURE_NO_WARNINGS'])
+
+# 创建输出目录
+output_dir = '../../bin'
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+# 设置输出路径
+env.Replace(BINDIR=output_dir)
+
+# 编译dynamic_pytorch_test.cpp - 只使用Windows API和标准库
+dynamic_test_exe = env.Program(
+    target=os.path.join(env['BINDIR'], 'dynamic_pytorch_test.exe'),
+    source='dynamic_pytorch_test.cpp'
+)
+
+# 设置默认目标
+Default(dynamic_test_exe)
+
+# 打印编译信息
+print("\nSCons构建配置:")
+print(f"  平台: {env['PLATFORM']}")
+print(f"  编译器: {env.get('CXX', 'default')}")
+print(f"  输出目录: {output_dir}")
+print(f"  目标: dynamic_pytorch_test.exe")

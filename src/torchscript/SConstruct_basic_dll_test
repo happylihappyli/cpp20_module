@@ -1,0 +1,49 @@
+# SConstruct文件用于编译simple_pytorch_test.cpp
+# 这个程序只测试基本的DLL加载功能，不链接PyTorch库
+
+import os
+import sys
+
+# 设置构建环境
+env = Environment()
+
+# 设置为Windows平台
+if env['PLATFORM'] == 'win32':
+    # 设置VS编译器
+    env.Tool('msvc')
+    
+    # 设置C++标准为C++17
+    env.Append(CPPFLAGS=['/std:c++17', '/EHsc', '/utf-8', '/D_CRT_SECURE_NO_WARNINGS'])
+    
+    # 仅链接Windows系统库，不链接PyTorch库
+    env.Append(LIBS=['kernel32', 'user32', 'gdi32', 'winspool', 'comdlg32', 'advapi32', 'shell32', 'ole32', 'oleaut32', 'uuid', 'odbc32', 'odbccp32'])
+else:
+    # 非Windows平台，仅链接基本系统库
+    env.Append(LIBS=['c', 'stdc++'])
+
+# 创建输出目录
+output_dir = '../../bin'
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+# 设置输出路径
+env.Replace(BINDIR=output_dir)
+
+# 创建可执行文件
+simple_test_exe = env.Program(
+    target=os.path.join(env['BINDIR'], 'simple_pytorch_test.exe'),
+    source='simple_pytorch_test.cpp'
+)
+
+# 设置默认目标
+Default(simple_test_exe)
+
+# 打印编译信息
+print("\nSCons构建配置:")
+print(f"  平台: {env['PLATFORM']}")
+print(f"  编译器: $CC")
+print(f"  C++标准: C++17")
+print(f"  输出目录: {output_dir}")
+print(f"  目标: simple_pytorch_test.exe")
+print("  注意: 此程序只使用Windows系统库，不链接PyTorch库")
+print("  目的: 测试基本的DLL动态加载功能")

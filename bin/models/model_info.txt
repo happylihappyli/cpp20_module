@@ -1,0 +1,10 @@
+模型文件: simple_add_model_v2.8.0.pt
+导出版本: PyTorch 2.8.0+cpu
+输入格式: 一维FloatTensor，包含两个元素
+输出格式: 单个浮点数
+模型功能: 计算两个输入数的和
+
+C++项目使用建议:
+1. 确保使用的LibTorch版本与PyTorch 2.8.0兼容
+2. 输入应创建为torch::tensor({x, y})
+3. 输出可通过output.item<float>()获取

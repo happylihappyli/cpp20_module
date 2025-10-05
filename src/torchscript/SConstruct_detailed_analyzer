@@ -1,0 +1,39 @@
+# 设置构建环境
+import os
+import sys
+import platform
+
+# 检查是否为Windows平台
+is_windows = platform.system() == 'Windows'
+
+# 创建环境
+env = Environment()
+
+# 如果是Windows平台，使用MSVC编译器
+if is_windows:
+    env.Tool('msvc')
+    env.Append(CXXFLAGS=['/std:c++17', '/EHsc', '/W4'])
+    # 不添加优化，便于调试
+    env.Append(LINKFLAGS=['/DEBUG'])
+else:
+    # 非Windows平台，使用GCC或Clang
+    env.Append(CXXFLAGS=['-std=c++17', '-Wall', '-Wextra'])
+    env.Append(LINKFLAGS=['-g'])
+
+# 编译详细DLL分析器
+env.Program(
+    target='../../bin/detailed_dll_analyzer.exe',
+    source=['detailed_dll_analyzer.cpp'],
+    LIBS=['kernel32', 'user32', 'advapi32', 'shell32']  # 仅链接必要的Windows系统库
+)
+
+# 打印构建信息
+print('=====================================')
+print('  详细DLL依赖分析器构建配置')
+print('=====================================')
+print(f'操作系统: {platform.system()}')
+print(f'编译器: {env["CXX"]}')
+print(f'C++标准: C++17')
+print(f'输出目录: ../../bin')
+print(f'输出文件: detailed_dll_analyzer.exe')
+print('=====================================')

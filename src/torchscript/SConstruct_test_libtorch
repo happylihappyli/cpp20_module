@@ -1,0 +1,68 @@
+# 简单的SConstruct文件，用于编译simple_torch_test.cpp
+# 用于测试LibTorch库是否能正常工作
+
+import os
+
+# 设置构建环境
+env = Environment()
+
+# 设置为Windows平台
+if env['PLATFORM'] == 'win32':
+    # 设置VS编译器
+    env.Tool('msvc')
+    
+    # 设置C++标准为C++17（PyTorch推荐版本）
+    env.Append(CPPFLAGS=['/std:c++17', '/EHsc', '/utf-8', '/D_CRT_SECURE_NO_WARNINGS'])
+
+# 设置PyTorch路径
+PYTORCH_PATH = os.environ.get('PYTORCH_PATH', r'D:/Code\libtorch-win-shared-with-deps-2.8.0+cu126\libtorch')
+
+# 打印PyTorch路径信息
+print(f"使用PyTorch路径: {PYTORCH_PATH}")
+
+# 检查PyTorch路径是否存在
+if not os.path.exists(PYTORCH_PATH):
+    print(f"错误: PyTorch路径 '{PYTORCH_PATH}' 不存在！")
+    Exit(1)
+
+# 设置PyTorch的包含路径
+env.Append(CPPPATH=[
+    os.path.join(PYTORCH_PATH, 'include'),
+    os.path.join(PYTORCH_PATH, 'include', 'torch', 'csrc', 'api', 'include')
+])
+
+# 设置PyTorch的库路径
+env.Append(LIBPATH=[
+    os.path.join(PYTORCH_PATH, 'lib')
+])
+
+# 设置需要链接的库
+env.Append(LIBS=['torch', 'torch_cpu', 'c10'])
+
+# 创建输出目录
+output_dir = '../../bin'
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+# 设置输出路径
+env.Replace(BINDIR=output_dir)
+
+# 编译测试程序
+torch_test_exe = env.Program(
+    target=os.path.join(env['BINDIR'], 'simple_torch_test.exe'),
+    source='simple_torch_test.cpp'
+)
+
+# 设置默认目标
+Default(torch_test_exe)
+
+# 打印编译信息
+print("\nSCons构建配置:")
+print(f"  平台: {env['PLATFORM']}")
+print(f"  C++标准: C++17")
+print(f"  PyTorch路径: {PYTORCH_PATH}")
+print(f"  输出目录: {output_dir}")
+print(f"  目标: simple_torch_test.exe")
+print("\n使用方法:")
+print("  编译: scons -f SConstruct_test_libtorch")
+print("  运行: ../../bin/simple_torch_test.exe")

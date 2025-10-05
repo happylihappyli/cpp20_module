@@ -1,0 +1,94 @@
+import os
+import platform
+
+# 设置构建环境
+env = Environment()
+
+# 检查当前平台
+if platform.system() == 'Windows':
+    # Windows平台设置
+    env['CXX'] = 'cl'
+    env['CC'] = 'cl'
+    env.Append(CXXFLAGS=['/std:c++17', '/EHsc', '/MDd', '/Zi', '/Od'])
+    
+    # 设置PyTorch路径 - 尝试多个可能的位置
+    possible_paths = [
+        os.environ.get('LIBTORCH', ''),
+        '../../libtorch',  # 相对于项目的路径
+        'D:/libtorch',     # 常见的Windows安装路径
+        'C:/libtorch',
+        '../libtorch'
+    ]
+    
+    LIBTORCH_PATH = ''
+    for path in possible_paths:
+        if path and os.path.exists(path):
+            LIBTORCH_PATH = path
+            break
+    
+    # 如果没有找到LibTorch路径，让用户手动设置
+    if not LIBTORCH_PATH:
+        print("错误: 未找到LibTorch目录！")
+        print("请通过以下方式之一设置正确的LibTorch路径:")
+        print("1. 设置LIBTORCH环境变量")
+        print("2. 将LibTorch放在项目的../../libtorch目录下")
+        print("3. 直接修改此SConstruct文件中的路径设置")
+        Exit(1)
+    
+    # 添加PyTorch头文件和库文件路径
+    env.Append(CPPPATH=[os.path.join(LIBTORCH_PATH, 'include')])
+    env.Append(CPPPATH=[os.path.join(LIBTORCH_PATH, 'include', 'torch', 'csrc', 'api', 'include')])
+    env.Append(LIBPATH=[os.path.join(LIBTORCH_PATH, 'lib')])
+    
+    # 添加PyTorch库
+    env.Append(LIBS=['torch', 'torch_cpu', 'c10'])
+    
+    # 启用调试信息
+    env.Append(CXXFLAGS=['/DDEBUG'])
+else:
+    # 其他平台（如Linux/macOS）
+    env.Append(CXXFLAGS=['-std=c++17', '-g', '-O0'])
+    
+    # 设置PyTorch路径（用户需要根据实际安装路径修改）
+    LIBTORCH_PATH = os.environ.get('LIBTORCH', '/opt/libtorch')
+    
+    # 检查LibTorch路径是否存在
+    if not os.path.exists(LIBTORCH_PATH):
+        print(f"错误: 未找到LibTorch目录: {LIBTORCH_PATH}")
+        print("请设置正确的LIBTORCH环境变量或修改此文件中的路径")
+        Exit(1)
+    
+    # 添加PyTorch头文件和库文件路径
+    env.Append(CPPPATH=[os.path.join(LIBTORCH_PATH, 'include')])
+    env.Append(CPPPATH=[os.path.join(LIBTORCH_PATH, 'include', 'torch', 'csrc', 'api', 'include')])
+    env.Append(LIBPATH=[os.path.join(LIBTORCH_PATH, 'lib')])
+    
+    # 添加PyTorch库
+    env.Append(LIBS=['torch', 'torch_cpu', 'c10'])
+
+# 设置输出目录
+bin_dir = '../bin'
+os.makedirs(bin_dir, exist_ok=True)
+env['PROGSUFFIX'] = '.exe' if platform.system() == 'Windows' else ''
+env['RUNTIME_OUTPUT_DIR'] = bin_dir
+
+# 编译测试程序
+test_program = env.Program(
+    target='test_new_model',
+    source='test_new_model.cpp'
+)
+
+# 编译验证程序
+verify_program = env.Program(
+    target='verify_libtorch',
+    source='verify_libtorch.cpp'
+)
+
+# 打印构建信息
+print(f"构建配置:")
+print(f"- 平台: {platform.system()}")
+print(f"- C++编译器: {env['CXX']}")
+print(f"- LibTorch路径: {LIBTORCH_PATH}")
+print(f"- 输出目录: {bin_dir}")
+print(f"- 目标程序1: {os.path.join(bin_dir, 'test_new_model' + ('.exe' if platform.system() == 'Windows' else ''))}")
+print(f"- 目标程序2: {os.path.join(bin_dir, 'verify_libtorch' + ('.exe' if platform.system() == 'Windows' else ''))}")
